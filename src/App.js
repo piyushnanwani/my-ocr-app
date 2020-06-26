@@ -32,6 +32,39 @@ class App extends Component {
     }
   }
 
+  generateText = () => {
+    let uploads = this.state.uploads
+
+    for(var i=0; i< uploads.length; i++) {
+      Tesseract.recognize(uploads[i], {
+        lang: 'eng'
+      })
+      .catch(err => {
+        console.error(err);
+      })
+      .then(result => {
+        // Get COnfidence score
+        let confidence = result.confidence
+
+        // Get full output
+        let text = result.text;
+
+        // Get codes
+        let pattern = /b\w{10,10}\b/g
+        let patterns = result.text.match(pattern);
+
+        // Update state
+        this.setState({
+          patterns: this.state.patterns.concat(patterns), 
+          documents: this.state.documents.concat({
+            pattern: patterns, 
+            text: text, 
+            confidence: confidence
+          })
+        })
+      })
+    }
+  }
   render() {
     return (
       <div className="app">
@@ -52,35 +85,32 @@ class App extends Component {
             }) }
           </div>
 
-          <button className="button">Generate</button>
+          <button className="button" onClick={this.generateText} >Generate</button>
         </section>
 
         { /* Results */ }
-        <section className="results">
-
-          <div className="results__result">
-            <div className="results__result__image">
-              <img width="250px" />
-            </div>
-            <div className="results__result__info">
-              <div className="results__result__info__codes">
-                <small>{ /* Confidence score */ }</small>
-              </div>
-              <div className="results__result__info__codes">
-                <small>{ /* Pattern output */ }</small>
-              </div>
-              <div className="results__result__info__text">
-                <small>{ /* Full output */ }</small>
-              </div>
-            </div>
-            <hr />
+ <section className="results">
+  { this.state.documents.map((value, index) => {
+    return (
+      <div key={index} className="results__result">
+        <div className="results__result__image">
+          <img src={this.state.uploads[index]} width="250px" />
+        </div>
+        <div className="results__result__info">
+          <div className="results__result__info__codes">
+            <small><strong>Confidence Score:</strong> {value.confidence}</small>
           </div>
-
-          <div className="results__result">
-            { /* Additional output if more than one document is processed */ }
+          {/* <div className="results__result__info__codes">
+            <small><strong>Pattern Output:</strong> {value.pattern.map((pattern) => { return pattern + ', ' })}</small>
+          </div> */}
+          <div className="results__result__info__text">
+            <small><strong>Full Output:</strong> {value.text}</small>
           </div>
-
-        </section>
+        </div>
+      </div>
+    )
+  }) }
+</section>
       </div>
     )
   }
